@@ -59,7 +59,7 @@ from mypy.types import (
     Type, SyntheticTypeVisitor, Instance, AnyType, NoneTyp, CallableType, DeletedType, PartialType,
     TupleType, TypeType, TypeVarType, TypedDictType, UnboundType, UninhabitedType, UnionType,
     Overloaded, TypeVarDef, TypeList, CallableArgument, EllipsisType, StarType, LiteralType,
-    RawLiteralType,
+    RawLiteralType, AutoType,
 )
 from mypy.util import get_prefix, replace_object_state
 from mypy.typestate import TypeState
@@ -344,6 +344,9 @@ class TypeReplaceVisitor(SyntheticTypeVisitor[None]):
             arg.accept(self)
 
     def visit_any(self, typ: AnyType) -> None:
+        pass
+
+    def visit_auto(self, typ: AutoType) -> None:
         pass
 
     def visit_none_type(self, typ: NoneTyp) -> None:

@@ -20,7 +20,7 @@ T = TypeVar('T')
 
 from mypy.types import (
     Type, AnyType, CallableType, Overloaded, TupleType, TypedDictType, LiteralType,
-    RawLiteralType, Instance, NoneTyp, TypeType,
+    RawLiteralType, Instance, NoneTyp, TypeType, AutoType,
     UnionType, TypeVarType, PartialType, DeletedType, UninhabitedType, TypeVarDef,
     UnboundType, ErasedType, ForwardRef, StarType, EllipsisType, TypeList, CallableArgument,
 )
@@ -45,6 +45,10 @@ class TypeVisitor(Generic[T]):
 
     @abstractmethod
     def visit_any(self, t: AnyType) -> T:
+        pass
+
+    @abstractmethod
+    def visit_auto(self, t: AutoType) -> T:
         pass
 
     @abstractmethod
@@ -144,6 +148,9 @@ class TypeTranslator(TypeVisitor[Type]):
         return t
 
     def visit_any(self, t: AnyType) -> Type:
+        return t
+
+    def visit_auto(self, t: AutoType) -> Type:
         return t
 
     def visit_none_type(self, t: NoneTyp) -> Type:
@@ -249,6 +256,9 @@ class TypeQuery(SyntheticTypeVisitor[T]):
         return t.typ.accept(self)
 
     def visit_any(self, t: AnyType) -> T:
+        return self.strategy([])
+
+    def visit_auto(self, t: AutoType) -> T:
         return self.strategy([])
 
     def visit_uninhabited_type(self, t: UninhabitedType) -> T:

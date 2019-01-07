@@ -4,7 +4,7 @@ from mypy.types import (
     Type, Instance, CallableType, TypeVisitor, UnboundType, AnyType,
     NoneTyp, TypeVarType, Overloaded, TupleType, TypedDictType, UnionType,
     ErasedType, PartialType, DeletedType, UninhabitedType, TypeType, TypeVarId,
-    FunctionLike, TypeVarDef, LiteralType,
+    FunctionLike, TypeVarDef, LiteralType, AutoType,
 )
 
 
@@ -64,6 +64,9 @@ class ExpandTypeVisitor(TypeVisitor[Type]):
         return t
 
     def visit_any(self, t: AnyType) -> Type:
+        return t
+
+    def visit_auto(self, t: AutoType) -> Type:
         return t
 
     def visit_none_type(self, t: NoneTyp) -> Type:

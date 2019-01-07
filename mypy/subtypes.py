@@ -5,7 +5,7 @@ from mypy.types import (
     Type, AnyType, UnboundType, TypeVisitor, FormalArgument, NoneTyp, function_type,
     Instance, TypeVarType, CallableType, TupleType, TypedDictType, UnionType, Overloaded,
     ErasedType, PartialType, DeletedType, UninhabitedType, TypeType, is_named_instance,
-    FunctionLike, TypeOfAny, LiteralType,
+    FunctionLike, TypeOfAny, LiteralType, AutoType,
 )
 import mypy.applytype
 import mypy.constraints
@@ -161,6 +161,9 @@ class SubtypeVisitor(TypeVisitor[bool]):
         return True
 
     def visit_any(self, left: AnyType) -> bool:
+        return True
+
+    def visit_auto(self, left: AutoType) -> bool:
         return True
 
     def visit_none_type(self, left: NoneTyp) -> bool:
@@ -1059,6 +1062,9 @@ class ProperSubtypeVisitor(TypeVisitor[bool]):
 
     def visit_any(self, left: AnyType) -> bool:
         return isinstance(self.right, AnyType)
+
+    def visit_auto(self, left: AutoType) -> bool:
+        return isinstance(self.right, AutoType)
 
     def visit_none_type(self, left: NoneTyp) -> bool:
         if state.strict_optional:

@@ -434,6 +434,19 @@ class AnyType(Type):
                        data['missing_import_name'])
 
 
+class AutoType(Type):
+    __slots__ = ()
+
+    def accept(self, visitor: 'TypeVisitor[T]') -> T:
+        return visitor.visit_auto(self)
+
+    def __hash__(self) -> int:
+        return hash(AutoType)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, AutoType)
+
+
 class UninhabitedType(Type):
     """This type has no members.
 
@@ -1763,6 +1776,9 @@ class TypeStrVisitor(SyntheticTypeVisitor[str]):
 
     def visit_any(self, t: AnyType) -> str:
         return 'Any'
+
+    def visit_auto(self, t: AutoType) -> str:
+        return '...'
 
     def visit_none_type(self, t: NoneTyp) -> str:
         return "None"

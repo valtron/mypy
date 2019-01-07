@@ -159,6 +159,9 @@ class TypeFixer(TypeVisitor[None]):
     def visit_any(self, o: Any) -> None:
         pass  # Nothing to descend into.
 
+    def visit_auto(self, o: Any) -> None:
+        pass  # Nothing to descend into.
+
     def visit_callable_type(self, ct: CallableType) -> None:
         if ct.fallback:
             ct.fallback.accept(self)

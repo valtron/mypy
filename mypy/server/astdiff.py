@@ -59,7 +59,7 @@ from mypy.nodes import (
 from mypy.types import (
     Type, TypeVisitor, UnboundType, AnyType, NoneTyp, UninhabitedType,
     ErasedType, DeletedType, Instance, TypeVarType, CallableType, TupleType, TypedDictType,
-    UnionType, Overloaded, PartialType, TypeType, LiteralType,
+    UnionType, Overloaded, PartialType, TypeType, LiteralType, AutoType,
 )
 from mypy.util import get_prefix
 
@@ -267,6 +267,9 @@ class SnapshotTypeVisitor(TypeVisitor[SnapshotItem]):
                 snapshot_types(typ.args))
 
     def visit_any(self, typ: AnyType) -> SnapshotItem:
+        return snapshot_simple_type(typ)
+
+    def visit_auto(self, typ: AutoType) -> SnapshotItem:
         return snapshot_simple_type(typ)
 
     def visit_none_type(self, typ: NoneTyp) -> SnapshotItem:

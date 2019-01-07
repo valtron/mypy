@@ -6,7 +6,7 @@ from mypy.join import (
 )
 from mypy.types import (
     Type, AnyType, TypeVisitor, UnboundType, NoneTyp, TypeVarType, Instance, CallableType,
-    TupleType, TypedDictType, ErasedType, UnionType, PartialType, DeletedType,
+    TupleType, TypedDictType, ErasedType, UnionType, PartialType, DeletedType, AutoType,
     UninhabitedType, TypeType, TypeOfAny, Overloaded, FunctionLike, LiteralType,
 )
 from mypy.subtypes import (
@@ -371,6 +371,9 @@ class TypeMeetVisitor(TypeVisitor[Type]):
             return AnyType(TypeOfAny.special_form)
 
     def visit_any(self, t: AnyType) -> Type:
+        return self.s
+
+    def visit_auto(self, t: AutoType) -> Type:
         return self.s
 
     def visit_union_type(self, t: UnionType) -> Type:

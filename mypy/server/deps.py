@@ -99,7 +99,7 @@ from mypy.traverser import TraverserVisitor
 from mypy.types import (
     Type, Instance, AnyType, NoneTyp, TypeVisitor, CallableType, DeletedType, PartialType,
     TupleType, TypeType, TypeVarType, TypedDictType, UnboundType, UninhabitedType, UnionType,
-    FunctionLike, ForwardRef, Overloaded, TypeOfAny, LiteralType,
+    FunctionLike, ForwardRef, Overloaded, TypeOfAny, LiteralType, AutoType,
 )
 from mypy.server.trigger import make_trigger, make_wildcard_trigger
 from mypy.util import correct_relative_import
@@ -887,6 +887,9 @@ class TypeTriggersVisitor(TypeVisitor[List[str]]):
     def visit_any(self, typ: AnyType) -> List[str]:
         if typ.missing_import_name is not None:
             return [make_trigger(typ.missing_import_name)]
+        return []
+
+    def visit_auto(self, typ: AutoType) -> List[str]:
         return []
 
     def visit_none_type(self, typ: NoneTyp) -> List[str]:

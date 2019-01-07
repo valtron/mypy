@@ -6,7 +6,7 @@ from typing import List, Optional
 from mypy.types import (
     Type, AnyType, NoneTyp, TypeVisitor, Instance, UnboundType, TypeVarType, CallableType,
     TupleType, TypedDictType, ErasedType, UnionType, FunctionLike, Overloaded, LiteralType,
-    PartialType, DeletedType, UninhabitedType, TypeType, true_or_false, TypeOfAny,
+    PartialType, DeletedType, UninhabitedType, TypeType, true_or_false, TypeOfAny, AutoType,
 )
 from mypy.maptype import map_instance_to_supertype
 from mypy.subtypes import (
@@ -110,6 +110,9 @@ class TypeJoinVisitor(TypeVisitor[Type]):
             return UnionType.make_simplified_union([self.s, t])
 
     def visit_any(self, t: AnyType) -> Type:
+        return t
+
+    def visit_auto(self, t: AutoType) -> Type:
         return t
 
     def visit_none_type(self, t: NoneTyp) -> Type:

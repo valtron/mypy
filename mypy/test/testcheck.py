@@ -82,6 +82,7 @@ typecheck_files = [
     'check-final.test',
     'check-literal.test',
     'check-annotated.test',
+    'check-auto.test',
 ]
 
 

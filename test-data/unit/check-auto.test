@@ -1,0 +1,10 @@
+[case testAuto]
+from typing import Annotated, ClassVar
+from typing_extensions import Final
+
+class C:
+    f: ClassVar[...] = 1
+
+a: ... = ''
+b: Final[...] = 1
+c: Annotated[...] = 1

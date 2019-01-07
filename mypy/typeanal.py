@@ -1,7 +1,7 @@
 """Semantic analysis of types"""
 
 from collections import OrderedDict
-from typing import Callable, List, Optional, Set, Tuple, Iterator, TypeVar, Iterable, Dict
+from typing import Callable, List, Optional, Set, Tuple, Iterator, TypeVar, Iterable, Dict, Union
 
 from itertools import chain
 
@@ -16,7 +16,7 @@ from mypy.types import (
     CallableType, NoneTyp, DeletedType, TypeList, TypeVarDef, TypeVisitor, SyntheticTypeVisitor,
     StarType, PartialType, EllipsisType, UninhabitedType, TypeType, get_typ_args, set_typ_args,
     CallableArgument, get_type_vars, TypeQuery, union_items, TypeOfAny, ForwardRef, Overloaded,
-    LiteralType, RawLiteralType,
+    LiteralType, RawLiteralType, AutoType,
 )
 from mypy.fastparse import TYPE_COMMENT_SYNTAX_ERROR
 
@@ -310,6 +310,8 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                 return AnyType(TypeOfAny.from_error)
             return item
         elif fullname == 'typing.Annotated':
+            if isinstance(t.args[0], EllipsisType):
+                return AutoType()
             return self.anal_type(t.args[0])
         elif fullname in ('mypy_extensions.NoReturn', 'typing.NoReturn'):
             return UninhabitedType(is_noreturn=True)
@@ -418,6 +420,9 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
         return t
 
     def visit_any(self, t: AnyType) -> Type:
+        return t
+
+    def visit_auto(self, t: AutoType) -> Type:
         return t
 
     def visit_none_type(self, t: NoneTyp) -> Type:
@@ -934,6 +939,9 @@ class TypeAnalyserPass3(TypeVisitor[None]):
         pass
 
     def visit_any(self, t: AnyType) -> None:
+        pass
+
+    def visit_auto(self, t: AutoType) -> None:
         pass
 
     def visit_none_type(self, t: NoneTyp) -> None:
