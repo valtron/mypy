@@ -81,6 +81,7 @@ typecheck_files = [
     'check-dataclasses.test',
     'check-final.test',
     'check-literal.test',
+    'check-annotated.test',
 ]
 
 

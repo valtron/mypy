@@ -55,6 +55,7 @@ try:
         Index,
         Num,
         UnaryOp,
+        BinOp,
         USub,
     )
 except ImportError:
@@ -1058,6 +1059,8 @@ class ASTConverter:
         return self.visit(n.value)
 
 
+TypeOrExpr = Union[Type, Expression]
+
 class TypeConverter:
     def __init__(self,
                  errors: Optional[Errors],
@@ -1118,18 +1121,13 @@ class TypeConverter:
                                    self.assume_str_is_unicode)
                 or AnyType(TypeOfAny.from_error))
 
-    def visit_Call(self, e: Call) -> Type:
+    def visit_Call(self, e: Call) -> TypeOrExpr:
         # Parse the arg constructor
         f = e.func
         constructor = stringify_name(f)
 
         if not isinstance(self.parent(), ast3.List):
-            self.fail(TYPE_COMMENT_AST_ERROR, self.line, e.col_offset)
-            if constructor:
-                self.note("Suggestion: use {}[...] instead of {}(...)".format(
-                    constructor, constructor),
-                    self.line, e.col_offset)
-            return AnyType(TypeOfAny.from_error)
+            return self._visit_expr(e)
         if not constructor:
             self.fail("Expected arg constructor name", e.lineno, e.col_offset)
 
@@ -1188,7 +1186,7 @@ class TypeConverter:
             return UnboundType(str(n.value), line=self.line)
 
     # UnaryOp(op, operand)
-    def visit_UnaryOp(self, n: UnaryOp) -> Type:
+    def visit_UnaryOp(self, n: UnaryOp) -> TypeOrExpr:
         # We support specifically Literal[-4] and nothing else.
         # For example, Literal[+4] or Literal[~6] is not supported.
         typ = self.visit(n.operand)
@@ -1196,11 +1194,14 @@ class TypeConverter:
             if isinstance(typ.value, int):
                 typ.value *= -1
                 return typ
-        self.fail(TYPE_COMMENT_AST_ERROR, self.line, getattr(n, 'col_offset', -1))
-        return AnyType(TypeOfAny.from_error)
+        return self._visit_expr(n)
+
+    # BinOp(left, op, right)
+    def visit_BinOp(self, n: BinOp) -> TypeOrExpr:
+        return self._visit_expr(n)
 
     # Num(number n)
-    def visit_Num(self, n: Num) -> Type:
+    def visit_Num(self, n: Num) -> TypeOrExpr:
         # Could be either float or int
         numeric_value = n.n
         if isinstance(numeric_value, int):
@@ -1210,8 +1211,7 @@ class TypeConverter:
             # pass in 'None' for now. We'll report the appropriate error at a later stage.
             return RawLiteralType(None, 'builtins.float', line=self.line)
         else:
-            self.fail(TYPE_COMMENT_AST_ERROR, self.line, getattr(n, 'col_offset', -1))
-            return AnyType(TypeOfAny.from_error)
+            return self._visit_expr(n)
 
     # Str(string s)
     def visit_Str(self, n: Str) -> Type:
@@ -1233,10 +1233,9 @@ class TypeConverter:
         return RawLiteralType(contents, 'builtins.bytes', self.line, column=n.col_offset)
 
     # Subscript(expr value, slice slice, expr_context ctx)
-    def visit_Subscript(self, n: ast3.Subscript) -> Type:
+    def visit_Subscript(self, n: ast3.Subscript) -> TypeOrExpr:
         if not isinstance(n.slice, Index):
-            self.fail(TYPE_COMMENT_SYNTAX_ERROR, self.line, getattr(n, 'col_offset', -1))
-            return AnyType(TypeOfAny.from_error)
+            return self._visit_expr(n)
 
         empty_tuple_index = False
         if isinstance(n.slice.value, ast3.Tuple):
@@ -1251,22 +1250,20 @@ class TypeConverter:
             return UnboundType(value.name, params, line=self.line,
                                empty_tuple_index=empty_tuple_index)
         else:
-            self.fail(TYPE_COMMENT_AST_ERROR, self.line, getattr(n, 'col_offset', -1))
-            return AnyType(TypeOfAny.from_error)
+            return self._visit_expr(n)
 
     def visit_Tuple(self, n: ast3.Tuple) -> Type:
         return TupleType(self.translate_expr_list(n.elts), _dummy_fallback,
                          implicit=True, line=self.line)
 
     # Attribute(expr value, identifier attr, expr_context ctx)
-    def visit_Attribute(self, n: Attribute) -> Type:
+    def visit_Attribute(self, n: Attribute) -> TypeOrExpr:
         before_dot = self.visit(n.value)
 
         if isinstance(before_dot, UnboundType) and not before_dot.args:
             return UnboundType("{}.{}".format(before_dot.name, n.attr), line=self.line)
         else:
-            self.fail(TYPE_COMMENT_AST_ERROR, self.line, getattr(n, 'col_offset', -1))
-            return AnyType(TypeOfAny.from_error)
+            return self._visit_expr(n)
 
     # Ellipsis
     def visit_Ellipsis(self, n: ast3_Ellipsis) -> Type:
@@ -1276,6 +1273,9 @@ class TypeConverter:
     def visit_List(self, n: ast3.List) -> Type:
         assert isinstance(n.ctx, ast3.Load)
         return self.translate_argument_list(n.elts)
+
+    def _visit_expr(self, e: ast3.expr) -> Expression:
+        return ASTConverter(Options(), False, self.errors or Errors()).visit(e)
 
 
 def stringify_name(n: AST) -> Optional[str]:

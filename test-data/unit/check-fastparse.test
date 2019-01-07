@@ -271,7 +271,7 @@ x @= 1
 from typing import Dict
 x = None # type: Dict[x: y]
 [out]
-main:3: error: syntax error in type comment
+main:3: error: invalid type comment or annotation
 
 [case testPrintStatementTrailingCommaFastParser_python2]
 

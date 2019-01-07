@@ -17,6 +17,7 @@ ClassVar = 0
 Final = 0
 NoReturn = 0
 NewType = 0
+Annotated = 0
 
 # Type aliases.
 List = 0

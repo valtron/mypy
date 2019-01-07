@@ -309,6 +309,8 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                 self.fail('Invalid type: ClassVar cannot be generic', t)
                 return AnyType(TypeOfAny.from_error)
             return item
+        elif fullname == 'typing.Annotated':
+            return self.anal_type(t.args[0])
         elif fullname in ('mypy_extensions.NoReturn', 'typing.NoReturn'):
             return UninhabitedType(is_noreturn=True)
         elif fullname in ('typing_extensions.Literal', 'typing.Literal'):
@@ -688,6 +690,9 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
             return out
         elif isinstance(arg, ForwardRef):
             return [arg]
+        elif isinstance(arg, Expression):
+            self.fail('invalid type comment or annotation', ctx)
+            return None
         else:
             self.fail('Parameter {} of Literal[...] is invalid'.format(idx), ctx)
             return None
@@ -773,7 +778,10 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
             res.append(self.anal_type(t, nested))
         return res
 
-    def anal_type(self, t: Type, nested: bool = True) -> Type:
+    def anal_type(self, t: Union[Type, Expression], nested: bool = True) -> Type:
+        if isinstance(t, Expression):
+            self.fail("Invalid type annotation".format(t), t)
+            return AnyType(TypeOfAny.from_error)
         if nested:
             self.nesting_level += 1
         try:

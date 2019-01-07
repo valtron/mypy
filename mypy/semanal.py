@@ -1707,6 +1707,9 @@ class SemanticAnalyzerPass2(NodeVisitor[None],
                   allow_tuple_literal: bool = False,
                   allow_unbound_tvars: bool = False,
                   third_pass: bool = False) -> Type:
+        if isinstance(t, Expression):
+            self.fail("invalid type comment or annotation", t)
+            return AnyType(TypeOfAny.from_error)
         a = self.type_analyzer(tvar_scope=tvar_scope,
                                allow_unbound_tvars=allow_unbound_tvars,
                                allow_tuple_literal=allow_tuple_literal,
@@ -1802,6 +1805,9 @@ class SemanticAnalyzerPass2(NodeVisitor[None],
         access qualifier for given `Var`.
         """
         if not s.type or not self.is_final_type(s.type):
+            return
+        if self.is_annotated(s.type):
+            s.is_final_def = True
             return
         assert isinstance(s.type, UnboundType)
         if len(s.type.args) > 1:
@@ -2475,7 +2481,12 @@ class SemanticAnalyzerPass2(NodeVisitor[None],
         sym = self.lookup_qualified(typ.name, typ)
         if not sym or not sym.node:
             return False
-        return sym.node.fullname() == 'typing.ClassVar'
+        fullname = sym.node.fullname()
+        if fullname == 'typing.Annotated':
+            for t in typ.args:
+                if self.is_classvar(t):
+                    return True
+        return fullname == 'typing.ClassVar'
 
     def is_final_type(self, typ: Type) -> bool:
         if not isinstance(typ, UnboundType):
@@ -2483,8 +2494,20 @@ class SemanticAnalyzerPass2(NodeVisitor[None],
         sym = self.lookup_qualified(typ.name, typ)
         if not sym or not sym.node:
             return False
-        return sym.node.fullname() in ('typing.Final',
-                                       'typing_extensions.Final')
+        fullname = sym.node.fullname()
+        if fullname == 'typing.Annotated':
+            for t in typ.args:
+                if self.is_final_type(t):
+                    return True
+        return fullname in ('typing.Final', 'typing_extensions.Final')
+
+    def is_annotated(self, typ: Type) -> bool:
+        if not isinstance(typ, UnboundType):
+            return False
+        sym = self.lookup_qualified(typ.name, typ)
+        if not sym or not sym.node:
+            return False
+        return sym.node.fullname() == 'typing.Annotated'
 
     def fail_invalid_classvar(self, context: Context) -> None:
         self.fail('ClassVar can only be used for assignments in class body', context)
